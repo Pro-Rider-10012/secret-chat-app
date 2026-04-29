@@ -7,10 +7,6 @@ const forms = {
     register: document.getElementById("register-form"),
 };
 const alertBox = document.getElementById("auth-alert");
-const otpLabel = document.getElementById("otp-label");
-const registerSubmit = document.getElementById("register-submit");
-
-let otpRequested = false;
 
 function showAlert(message, type = "error") {
     alertBox.textContent = message;
@@ -55,28 +51,13 @@ forms.register.addEventListener("submit", async (event) => {
     const phoneNumber = formData.get("phone_number");
     const username = formData.get("username");
     const password = formData.get("password");
-    const otpCode = formData.get("otp_code");
 
     try {
-        if (!otpRequested) {
-            const payload = await post("/api/auth/request-otp", {
-                phone_number: phoneNumber,
-                username,
-            });
-            otpRequested = true;
-            otpLabel.classList.remove("hidden");
-            registerSubmit.textContent = "Verify OTP & Create Account";
-            const suffix = payload.debug_otp ? ` Dev OTP: ${payload.debug_otp}` : "";
-            showAlert(`OTP sent to ${phoneNumber}.${suffix}`, "success");
-            return;
-        }
-
         const identity = await generateIdentity(password);
         await post("/api/auth/register", {
             phone_number: phoneNumber,
             username,
             password,
-            otp_code: otpCode,
             public_key: identity.publicKey,
             encrypted_private_key: identity.encryptedPrivateKey,
             key_encryption_salt: identity.keyEncryptionSalt,

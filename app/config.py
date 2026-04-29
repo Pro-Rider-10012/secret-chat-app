@@ -22,8 +22,6 @@ class Config:
     LOCAL_MEDIA_DIR = Path(os.getenv("LOCAL_MEDIA_DIR", INSTANCE_DIR / "media"))
 
     MESSAGE_TTL_HOURS = int(os.getenv("MESSAGE_TTL_HOURS", "24"))
-    OTP_TTL_MINUTES = int(os.getenv("OTP_TTL_MINUTES", "10"))
-    EXPOSE_DEBUG_OTP = _to_bool(os.getenv("EXPOSE_DEBUG_OTP", "true"))
     ENABLE_SCHEDULER = _to_bool(os.getenv("ENABLE_SCHEDULER", "true"))
 
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -31,10 +29,6 @@ class Config:
     AWS_S3_BUCKET = os.getenv("AWS_S3_BUCKET")
     AWS_S3_REGION = os.getenv("AWS_S3_REGION", "us-east-1")
     AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")
-
-    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-    TWILIO_VERIFY_SERVICE_SID = os.getenv("TWILIO_VERIFY_SERVICE_SID")
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

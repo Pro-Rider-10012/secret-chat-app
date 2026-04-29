@@ -1,6 +1,6 @@
 # Secret
 
-Secret is a privacy-focused Snapchat-style realtime chat application built with Flask, Socket.IO, PostgreSQL, vanilla HTML/CSS/JS, Twilio OTP, and S3-compatible media storage.
+Secret is a privacy-focused Snapchat-style realtime chat application built with Flask, Socket.IO, PostgreSQL, vanilla HTML/CSS/JS, and S3-compatible media storage.
 
 ## 1. Folder Structure
 
@@ -21,7 +21,6 @@ Chatting app/
 |   |   `-- pages.py
 |   |-- services/
 |   |   |-- auth_helpers.py
-|   |   |-- otp_service.py
 |   |   `-- storage_service.py
 |   |-- static/
 |   |   |-- css/style.css
@@ -62,11 +61,10 @@ Reference SQL: [database/schema.sql](C:\D dirve\Projects\Chatting app\database\s
 
 ### Authentication
 
-1. `POST /api/auth/request-otp`
-2. `POST /api/auth/register`
-3. `POST /api/auth/login`
-4. `GET /api/auth/session`
-5. `POST /api/auth/logout`
+1. `POST /api/auth/register`
+2. `POST /api/auth/login`
+3. `GET /api/auth/session`
+4. `POST /api/auth/logout`
 
 ### Friends
 
@@ -105,11 +103,9 @@ Reference SQL: [database/schema.sql](C:\D dirve\Projects\Chatting app\database\s
 Registration flow:
 
 1. User enters phone number, username, and password.
-2. `request-otp` sends an SMS via Twilio Verify when configured.
-3. In local development, a debug OTP is returned in the API response when `EXPOSE_DEBUG_OTP=true`.
-4. The browser generates an RSA key pair.
-5. The private key is encrypted in the browser with a password-derived AES key.
-6. `register` stores the public key, encrypted private key, and binary password hash.
+2. The browser generates an RSA key pair.
+3. The private key is encrypted in the browser with a password-derived AES key.
+4. `register` stores the public key, encrypted private key, and binary password hash.
 
 Login flow:
 
@@ -165,9 +161,8 @@ Copy [.env.example](C:\D dirve\Projects\Chatting app\.env.example) to `.env` and
 
 1. `SECRET_KEY`
 2. `DATABASE_URL`
-3. Twilio Verify credentials
-4. AWS S3 credentials
-5. Cookie/security toggles
+3. AWS S3 credentials
+4. Cookie/security toggles
 
 ### Local Run Instructions
 
@@ -186,7 +181,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-6. Update `.env` with your PostgreSQL URL and optional Twilio/S3 credentials.
+6. Update `.env` with your PostgreSQL URL and optional S3 credentials.
 7. Run the app:
 
 ```bash
@@ -208,8 +203,6 @@ python run.py
    - `SECRET_KEY`
    - `SESSION_COOKIE_SECURE=true`
    - `ENABLE_SCHEDULER=true`
-   - `EXPOSE_DEBUG_OTP=false`
-   - Twilio credentials
    - AWS S3 credentials
 6. Keep one web worker if the scheduler runs inside the web service.
 
