@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: secret-chat
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --worker-class eventlet -w 1 run:app
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENABLE_SCHEDULER
+        value: "true"
+      - key: EXPOSE_DEBUG_OTP
+        value: "false"

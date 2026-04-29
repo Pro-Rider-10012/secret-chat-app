@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Secret | Private Login{% endblock %}
+{% block body %}
+<main class="auth-shell">
+    <section class="auth-hero">
+        <div class="brand-lock">
+            <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Secret logo">
+        </div>
+        <p class="eyebrow">Privacy-first realtime messaging</p>
+        <h1>Secret</h1>
+        <p class="hero-copy">
+            A disappearing message platform with end-to-end encrypted chats, realtime presence,
+            screenshot alerts, and secure media sharing.
+        </p>
+        <div class="hero-grid">
+            <article>
+                <span>24H</span>
+                <p>Auto-delete for messages and media</p>
+            </article>
+            <article>
+                <span>E2E</span>
+                <p>Client-side encrypted text payloads</p>
+            </article>
+            <article>
+                <span>LIVE</span>
+                <p>Socket-powered typing and seen status</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="auth-panel">
+        <header class="panel-header">
+            <h2>Enter Secret</h2>
+            <p>Sign in with your phone number or create a verified account.</p>
+        </header>
+
+        <div class="tab-switcher">
+            <button class="tab-button active" data-tab="login">Login</button>
+            <button class="tab-button" data-tab="register">Register</button>
+        </div>
+
+        <div id="auth-alert" class="alert hidden"></div>
+
+        <form id="login-form" class="auth-form active">
+            <label>
+                <span>Phone Number</span>
+                <input name="phone_number" type="tel" placeholder="+8801XXXXXXXXX" required>
+            </label>
+            <label>
+                <span>Password</span>
+                <input name="password" type="password" placeholder="Your password" required>
+            </label>
+            <button type="submit" class="glow-button">Login to Secret</button>
+        </form>
+
+        <form id="register-form" class="auth-form">
+            <label>
+                <span>Phone Number</span>
+                <input name="phone_number" type="tel" placeholder="+8801XXXXXXXXX" required>
+            </label>
+            <label>
+                <span>Username</span>
+                <input name="username" type="text" placeholder="alias_404" required>
+            </label>
+            <label>
+                <span>Password</span>
+                <input name="password" type="password" placeholder="Create a strong password" required>
+            </label>
+            <label id="otp-label" class="hidden">
+                <span>OTP Code</span>
+                <input name="otp_code" type="text" placeholder="Enter the SMS code">
+            </label>
+            <button type="submit" class="glow-button" id="register-submit">Send OTP</button>
+            <p class="microcopy">Phone numbers are unique. One number can only create one Secret account.</p>
+        </form>
+    </section>
+</main>
+<script type="module" src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

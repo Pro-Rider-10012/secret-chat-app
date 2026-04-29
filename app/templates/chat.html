@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Secret | Encrypted Chat{% endblock %}
+{% block head %}
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
+{% endblock %}
+{% block body %}
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Secret logo">
+            <div>
+                <p class="eyebrow">Realtime secure chat</p>
+                <h1>Secret</h1>
+            </div>
+        </div>
+
+        <section class="card">
+            <div class="section-title">
+                <h2>Network</h2>
+                <button id="logout-button" class="ghost-button">Logout</button>
+            </div>
+            <form id="friend-form" class="inline-form">
+                <input id="friend-phone" type="tel" placeholder="Add friend by phone number" required>
+                <button type="submit" class="glow-button compact">Add</button>
+            </form>
+        </section>
+
+        <section class="card requests-card">
+            <div class="section-title">
+                <h2>Requests</h2>
+                <span id="request-count" class="pill">0</span>
+            </div>
+            <div id="incoming-requests" class="request-list empty-state-text">No incoming requests.</div>
+        </section>
+
+        <section class="card friends-card">
+            <div class="section-title">
+                <h2>Friends</h2>
+                <span id="friend-count" class="pill">0</span>
+            </div>
+            <div id="conversation-list" class="conversation-list empty-state-text">
+                Add a friend to start chatting.
+            </div>
+        </section>
+    </aside>
+
+    <main class="chat-stage">
+        <header class="chat-header">
+            <div>
+                <p class="eyebrow">Secure line</p>
+                <h2 id="active-friend-name">Choose a friend</h2>
+                <p id="active-friend-status" class="status-text">Only accepted friends can chat.</p>
+            </div>
+            <button id="refresh-gallery" class="ghost-button">Refresh Gallery</button>
+        </header>
+
+        <section id="message-stream" class="message-stream">
+            <div class="empty-state">
+                <h3>Private conversations start here</h3>
+                <p>Pick a friend from the left, then send encrypted text, images, or video.</p>
+            </div>
+        </section>
+
+        <div class="typing-row">
+            <span id="typing-indicator"></span>
+        </div>
+
+        <footer class="composer card">
+            <div class="composer-row">
+                <textarea id="message-input" rows="2" placeholder="Write an encrypted message or use this as a media caption"></textarea>
+                <div class="composer-actions">
+                    <label class="upload-label">
+                        <input id="media-input" type="file" accept="image/*,video/*">
+                        <span>Attach</span>
+                    </label>
+                    <button id="send-button" class="glow-button">Send</button>
+                </div>
+            </div>
+            <div id="upload-progress" class="progress-text"></div>
+        </footer>
+    </main>
+
+    <aside class="gallery-panel">
+        <div class="section-title">
+            <h2>Media Gallery</h2>
+            <span class="pill">24h</span>
+        </div>
+        <div id="gallery-grid" class="gallery-grid empty-state-text">
+            Media you share in Secret appears here until it expires.
+        </div>
+    </aside>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script type="module" src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
