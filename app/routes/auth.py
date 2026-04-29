@@ -1,10 +1,12 @@
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
+from sqlalchemy import text
 
 from ..extensions import db
-from ..models import User
+from ..models import MediaAsset, User
 from ..services.auth_helpers import get_current_user, login_required
+from ..services.storage_service import StorageError, get_storage
 
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
@@ -12,6 +14,56 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 def _json() -> dict:
     return request.get_json(silent=True) or {}
+
+
+@auth_bp.post("/admin/reset-data")
+def admin_reset_data():
+    reset_key = request.headers.get("X-Reset-Key")
+    if not reset_key or reset_key != current_app.config["SECRET_KEY"]:
+        return jsonify({"error": "Forbidden."}), 403
+
+    assets = MediaAsset.query.all()
+    storage = get_storage()
+    for asset in assets:
+        try:
+            storage.delete_file(asset)
+        except StorageError:
+            pass
+
+    counts_before = {}
+    table_names = [
+        "screenshot_events",
+        "chat_messages",
+        "media_assets",
+        "upload_sessions",
+        "friendships",
+        "users",
+    ]
+    for table_name in table_names:
+        result = db.session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+        counts_before[table_name] = result.scalar()
+
+    db.session.execute(
+        text(
+            "TRUNCATE TABLE screenshot_events, chat_messages, media_assets, "
+            "upload_sessions, friendships, users RESTART IDENTITY CASCADE"
+        )
+    )
+    db.session.commit()
+    session.clear()
+
+    counts_after = {}
+    for table_name in table_names:
+        result = db.session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+        counts_after[table_name] = result.scalar()
+
+    return jsonify(
+        {
+            "message": "All application data deleted successfully.",
+            "before": counts_before,
+            "after": counts_after,
+        }
+    )
 
 
 @auth_bp.post("/register")
