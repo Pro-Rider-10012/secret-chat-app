@@ -46,6 +46,37 @@ class User(db.Model):
         }
 
 
+class AppNotification(db.Model):
+    __tablename__ = "app_notifications"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    recipient_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey("users.id"), index=True)
+    kind = db.Column(db.String(32), nullable=False, index=True)
+    title = db.Column(db.String(255), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    resource_type = db.Column(db.String(32))
+    resource_id = db.Column(db.String(64))
+    is_read = db.Column(db.Boolean, default=False, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+    recipient = db.relationship("User", foreign_keys=[recipient_id], lazy="joined")
+    actor = db.relationship("User", foreign_keys=[actor_id], lazy="joined")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "kind": self.kind,
+            "title": self.title,
+            "body": self.body,
+            "resource_type": self.resource_type,
+            "resource_id": self.resource_id,
+            "is_read": self.is_read,
+            "created_at": self.created_at.isoformat(),
+            "actor": self.actor.to_public_dict() if self.actor else None,
+        }
+
+
 class Friendship(db.Model):
     __tablename__ = "friendships"
 
@@ -75,6 +106,55 @@ class Friendship(db.Model):
             "responded_at": self.responded_at.isoformat() if self.responded_at else None,
             "friend": friend.to_public_dict(),
             "direction": "outgoing" if self.requester_id == user_id else "incoming",
+        }
+
+
+class Group(db.Model):
+    __tablename__ = "groups"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    name = db.Column(db.String(120), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    creator = db.relationship("User", lazy="joined")
+
+    def to_dict(self, members: list["GroupMembership"] | None = None) -> dict:
+        payload = {
+            "id": self.id,
+            "name": self.name,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+        if members is not None:
+            payload["members"] = [member.to_dict() for member in members]
+        return payload
+
+
+class GroupMembership(db.Model):
+    __tablename__ = "group_memberships"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.String(36), db.ForeignKey("groups.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    role = db.Column(db.String(16), default="member", nullable=False)
+    joined_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    group = db.relationship("Group", lazy="joined")
+    user = db.relationship("User", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("group_id", "user_id", name="uq_group_membership"),
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "role": self.role,
+            "joined_at": self.joined_at.isoformat(),
+            "user": self.user.to_public_dict(),
         }
 
 
@@ -132,9 +212,7 @@ class ChatMessage(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    recipient_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
-    )
+    recipient_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     kind = db.Column(db.String(16), default="text", nullable=False)
     sender_payload = db.Column(db.Text)
     recipient_payload = db.Column(db.Text)
@@ -166,15 +244,42 @@ class ChatMessage(db.Model):
         }
 
 
+class GroupMessage(db.Model):
+    __tablename__ = "group_messages"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    group_id = db.Column(db.String(36), db.ForeignKey("groups.id"), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    kind = db.Column(db.String(16), default="text", nullable=False)
+    payload = db.Column(db.Text)
+    media_id = db.Column(db.String(36), db.ForeignKey("media_assets.id"), index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+
+    group = db.relationship("Group", lazy="joined")
+    sender = db.relationship("User", foreign_keys=[sender_id], lazy="joined")
+    media = db.relationship("MediaAsset", lazy="joined")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "group_id": self.group_id,
+            "kind": self.kind,
+            "payload": self.payload,
+            "sender": self.sender.to_public_dict(),
+            "created_at": self.created_at.isoformat(),
+            "expires_at": self.expires_at.isoformat(),
+            "media": self.media.to_dict() if self.media else None,
+        }
+
+
 class ScreenshotEvent(db.Model):
     __tablename__ = "screenshot_events"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     reporter_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     target_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    conversation_user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
-    )
+    conversation_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     reason = db.Column(db.String(32), nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
 

@@ -1,15 +1,18 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import and_, desc, func, or_
 
-from ..models import ChatMessage
+from ..extensions import db
+from ..models import ChatMessage, Group, GroupMembership, GroupMessage, User
 from ..services.auth_helpers import (
     accepted_friendships_for,
     are_friends,
     get_current_user,
+    is_group_member,
     login_required,
 )
+from ..services.notification_service import create_notification
 
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/api")
@@ -42,6 +45,7 @@ def conversations():
         )
         payload.append(
             {
+                "type": "direct",
                 "friend": friend.to_public_dict(),
                 "last_message": last_message.to_dict_for(user.id) if last_message else None,
                 "unread_count": unread_count or 0,
@@ -91,3 +95,113 @@ def gallery(friend_id: int):
     )
     gallery_items = [message.to_dict_for(user.id) for message in media_messages]
     return jsonify({"items": gallery_items})
+
+
+@chat_bp.get("/groups")
+@login_required
+def list_groups():
+    user = get_current_user()
+    memberships = (
+        GroupMembership.query.filter_by(user_id=user.id)
+        .order_by(desc(GroupMembership.joined_at))
+        .all()
+    )
+    payload = []
+    for membership in memberships:
+        group = membership.group
+        members = GroupMembership.query.filter_by(group_id=group.id).all()
+        last_message = (
+            GroupMessage.query.filter_by(group_id=group.id)
+            .filter(GroupMessage.expires_at > datetime.utcnow())
+            .order_by(desc(GroupMessage.created_at))
+            .first()
+        )
+        payload.append(
+            {
+                **group.to_dict(members=members),
+                "last_message": last_message.to_dict() if last_message else None,
+            }
+        )
+    return jsonify({"groups": payload})
+
+
+@chat_bp.post("/groups")
+@login_required
+def create_group():
+    user = get_current_user()
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    member_ids = sorted({int(member_id) for member_id in data.get("member_ids", []) if member_id})
+    if not name:
+        return jsonify({"error": "Group name is required."}), 400
+
+    valid_members = User.query.filter(User.id.in_(member_ids)).all() if member_ids else []
+    valid_user_ids = {member.id for member in valid_members}
+    if len(valid_user_ids) != len(member_ids):
+        return jsonify({"error": "One or more selected users do not exist."}), 400
+
+    valid_users = {user.id, *valid_user_ids}
+
+    group = Group(name=name, created_by=user.id)
+    db.session.add(group)
+    db.session.flush()
+
+    created_memberships = []
+    for member_id in valid_users:
+        membership = GroupMembership(
+            group_id=group.id,
+            user_id=member_id,
+            role="owner" if member_id == user.id else "member",
+        )
+        db.session.add(membership)
+        created_memberships.append(membership)
+
+    db.session.commit()
+
+    for member_id in valid_user_ids:
+        create_notification(
+            recipient_id=member_id,
+            actor_id=user.id,
+            kind="group_added",
+            title="Added to a new group",
+            body=f"{user.username} added you to {group.name}.",
+            resource_type="group",
+            resource_id=group.id,
+        )
+
+    return jsonify({"group": group.to_dict(members=created_memberships)}), 201
+
+
+@chat_bp.get("/groups/<group_id>/messages")
+@login_required
+def group_messages(group_id: str):
+    user = get_current_user()
+    if not is_group_member(group_id, user.id):
+        return jsonify({"error": "You are not a member of this group."}), 403
+
+    limit = min(int(request.args.get("limit", 60)), 250)
+    messages = (
+        GroupMessage.query.filter_by(group_id=group_id)
+        .filter(GroupMessage.expires_at > datetime.utcnow())
+        .order_by(desc(GroupMessage.created_at))
+        .limit(limit)
+        .all()
+    )
+    return jsonify({"messages": [message.to_dict() for message in reversed(messages)]})
+
+
+@chat_bp.get("/groups/<group_id>/gallery")
+@login_required
+def group_gallery(group_id: str):
+    user = get_current_user()
+    if not is_group_member(group_id, user.id):
+        return jsonify({"error": "You are not a member of this group."}), 403
+
+    messages = (
+        GroupMessage.query.filter_by(group_id=group_id)
+        .filter(GroupMessage.media_id.isnot(None))
+        .filter(GroupMessage.expires_at > datetime.utcnow())
+        .order_by(desc(GroupMessage.created_at))
+        .all()
+    )
+    return jsonify({"items": [message.to_dict() for message in messages]})

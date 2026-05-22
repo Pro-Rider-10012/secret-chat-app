@@ -14,5 +14,3 @@ services:
         generateValue: true
       - key: ENABLE_SCHEDULER
         value: "true"
-      - key: EXPOSE_DEBUG_OTP
-        value: "false"

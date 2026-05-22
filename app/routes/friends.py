@@ -10,6 +10,7 @@ from ..services.auth_helpers import (
     get_current_user,
     login_required,
 )
+from ..services.notification_service import create_notification
 
 
 friends_bp = Blueprint("friends", __name__, url_prefix="/api/friends")
@@ -21,6 +22,23 @@ def list_friends():
     user = get_current_user()
     friendships = accepted_friendships_for(user.id)
     return jsonify({"friends": [friendship.to_dict_for(user.id) for friendship in friendships]})
+
+
+@friends_bp.get("/directory")
+@login_required
+def user_directory():
+    user = get_current_user()
+    users = User.query.filter(User.id != user.id).order_by(User.username.asc()).all()
+    payload = []
+    for directory_user in users:
+        relationship = find_friendship(user.id, directory_user.id)
+        payload.append(
+            {
+                "user": directory_user.to_public_dict(),
+                "relationship": relationship.to_dict_for(user.id) if relationship else None,
+            }
+        )
+    return jsonify({"users": payload})
 
 
 @friends_bp.get("/requests")
@@ -61,11 +79,29 @@ def send_friend_request():
             existing.addressee_id = friend.id
             existing.responded_at = None
             db.session.commit()
+            create_notification(
+                recipient_id=friend.id,
+                actor_id=user.id,
+                kind="friend_request",
+                title="New friend request",
+                body=f"{user.username} sent you a friend request.",
+                resource_type="friendship",
+                resource_id=str(existing.id),
+            )
             return jsonify({"message": "Friend request sent again."})
 
     friendship = Friendship(requester_id=user.id, addressee_id=friend.id, status="pending")
     db.session.add(friendship)
     db.session.commit()
+    create_notification(
+        recipient_id=friend.id,
+        actor_id=user.id,
+        kind="friend_request",
+        title="New friend request",
+        body=f"{user.username} sent you a friend request.",
+        resource_type="friendship",
+        resource_id=str(friendship.id),
+    )
     return jsonify({"message": "Friend request sent."}), 201
 
 
@@ -79,6 +115,15 @@ def accept_request(friendship_id: int):
     friendship.status = "accepted"
     friendship.responded_at = datetime.utcnow()
     db.session.commit()
+    create_notification(
+        recipient_id=friendship.requester_id,
+        actor_id=user.id,
+        kind="friend_accept",
+        title="Friend request accepted",
+        body=f"{user.username} accepted your friend request.",
+        resource_type="friendship",
+        resource_id=str(friendship.id),
+    )
     return jsonify({"message": "Friend request accepted."})
 
 

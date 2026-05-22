@@ -6,7 +6,7 @@ from pathlib import Path
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from .extensions import db
-from .models import ChatMessage, MediaAsset, UploadSession
+from .models import ChatMessage, GroupMessage, MediaAsset, UploadSession
 from .services.storage_service import StorageError, get_storage
 
 
@@ -17,17 +17,19 @@ def purge_expired_data(app) -> None:
     with app.app_context():
         now = datetime.utcnow()
         expired_messages = ChatMessage.query.filter(ChatMessage.expires_at <= now).all()
+        expired_group_messages = GroupMessage.query.filter(GroupMessage.expires_at <= now).all()
         media_ids = {message.media_id for message in expired_messages if message.media_id}
+        media_ids.update({message.media_id for message in expired_group_messages if message.media_id})
 
         for message in expired_messages:
+            db.session.delete(message)
+        for message in expired_group_messages:
             db.session.delete(message)
         db.session.commit()
 
         expired_assets = MediaAsset.query.filter(MediaAsset.expires_at <= now).all()
         if media_ids:
-            expired_assets.extend(
-                MediaAsset.query.filter(MediaAsset.id.in_(media_ids)).all()
-            )
+            expired_assets.extend(MediaAsset.query.filter(MediaAsset.id.in_(media_ids)).all())
 
         unique_assets = {asset.id: asset for asset in expired_assets}.values()
         storage = get_storage()

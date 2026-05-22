@@ -6,6 +6,7 @@ from .routes.auth import auth_bp
 from .routes.chat import chat_bp
 from .routes.friends import friends_bp
 from .routes.media import media_bp
+from .routes.notifications import notifications_bp
 from .routes.pages import pages_bp
 from .sockets import register_socket_handlers
 from .tasks import configure_scheduler
@@ -24,6 +25,7 @@ def create_app() -> Flask:
     app.register_blueprint(friends_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(media_bp)
+    app.register_blueprint(notifications_bp)
 
     with app.app_context():
         db.create_all()

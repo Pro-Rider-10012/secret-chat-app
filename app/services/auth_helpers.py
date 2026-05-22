@@ -6,7 +6,7 @@ from flask import jsonify, session
 from sqlalchemy import or_
 
 from ..extensions import db
-from ..models import Friendship, User
+from ..models import Friendship, GroupMembership, User
 
 
 def get_current_user() -> User | None:
@@ -48,3 +48,11 @@ def accepted_friendships_for(user_id: int) -> list[Friendship]:
         Friendship.status == "accepted",
         or_(Friendship.requester_id == user_id, Friendship.addressee_id == user_id),
     ).all()
+
+
+def is_group_member(group_id: str, user_id: int) -> bool:
+    return GroupMembership.query.filter_by(group_id=group_id, user_id=user_id).first() is not None
+
+
+def group_memberships_for(user_id: int) -> list[GroupMembership]:
+    return GroupMembership.query.filter_by(user_id=user_id).all()

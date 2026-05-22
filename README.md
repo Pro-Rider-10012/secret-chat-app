@@ -1,8 +1,22 @@
 # Secret
 
-Secret is a privacy-focused Snapchat-style realtime chat application built with Flask, Socket.IO, PostgreSQL, vanilla HTML/CSS/JS, and S3-compatible media storage.
+Secret is a classic-style private messenger built with Flask, Socket.IO, PostgreSQL, and vanilla HTML/CSS/JavaScript. It supports direct chat, group chat, voice notes, media sharing, notifications, screenshot alerts, and browser-based video calling.
 
-## 1. Folder Structure
+## Features
+
+- Phone number + password registration and login
+- End-to-end encrypted direct text messages
+- Friend requests and friend-only direct chats
+- User directory for finding everyone on the app
+- Realtime notifications for new messages and friend requests
+- Group creation and group chat
+- Voice messages with `MediaRecorder`
+- Browser video chat with WebRTC signaling over Socket.IO
+- Image, video, and audio uploads with chunked media transfer
+- 24-hour expiry cleanup for messages and media
+- Classic UI with a simpler, calmer visual style
+
+## Project Structure
 
 ```text
 Chatting app/
@@ -18,9 +32,11 @@ Chatting app/
 |   |   |-- chat.py
 |   |   |-- friends.py
 |   |   |-- media.py
+|   |   |-- notifications.py
 |   |   `-- pages.py
 |   |-- services/
 |   |   |-- auth_helpers.py
+|   |   |-- notification_service.py
 |   |   `-- storage_service.py
 |   |-- static/
 |   |   |-- css/style.css
@@ -37,151 +53,117 @@ Chatting app/
 |       `-- chat.html
 |-- database/schema.sql
 |-- .env.example
-|-- .gitignore
 |-- render.yaml
 |-- requirements.txt
 |-- run.py
 `-- README.md
 ```
 
-## 2. Database Schema
+## Main Database Tables
 
-The main tables are:
+- `users`
+- `friendships`
+- `app_notifications`
+- `groups`
+- `group_memberships`
+- `chat_messages`
+- `group_messages`
+- `media_assets`
+- `upload_sessions`
+- `screenshot_events`
 
-1. `users`: phone-based accounts, binary password hash, public key, encrypted private key, presence state.
-2. `friendships`: request, accept, reject workflow and friend-only chat enforcement.
-3. `chat_messages`: encrypted message payloads, media link, seen state, 24-hour expiry.
-4. `media_assets`: S3 or local storage metadata and expiry.
-5. `upload_sessions`: resumable chunk-upload session state for large files.
-6. `screenshot_events`: PrintScreen and tab-hide notifications.
+Reference SQL: [database/schema.sql](database/schema.sql)
 
-Reference SQL: [database/schema.sql](C:\D dirve\Projects\Chatting app\database\schema.sql)
+## Core API Routes
 
-## 3. Backend APIs
+### Auth
 
-### Authentication
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/session`
+- `POST /api/auth/logout`
 
-1. `POST /api/auth/register`
-2. `POST /api/auth/login`
-3. `GET /api/auth/session`
-4. `POST /api/auth/logout`
+### Friends and Directory
 
-### Friends
+- `GET /api/friends`
+- `GET /api/friends/directory`
+- `GET /api/friends/requests`
+- `POST /api/friends/request`
+- `POST /api/friends/request/<id>/accept`
+- `POST /api/friends/request/<id>/reject`
 
-1. `GET /api/friends`
-2. `GET /api/friends/requests`
-3. `POST /api/friends/request`
-4. `POST /api/friends/request/<id>/accept`
-5. `POST /api/friends/request/<id>/reject`
+### Direct and Group Chat
 
-### Chat
+- `GET /api/conversations`
+- `GET /api/messages/<friend_id>`
+- `GET /api/gallery/<friend_id>`
+- `GET /api/groups`
+- `POST /api/groups`
+- `GET /api/groups/<group_id>/messages`
+- `GET /api/groups/<group_id>/gallery`
 
-1. `GET /api/conversations`
-2. `GET /api/messages/<friend_id>`
-3. `GET /api/gallery/<friend_id>`
+### Notifications
+
+- `GET /api/notifications`
+- `POST /api/notifications/<id>/read`
+- `POST /api/notifications/read-all`
 
 ### Media
 
-1. `POST /api/media/upload-sessions`
-2. `PUT /api/media/upload-sessions/<id>/chunk?offset=<bytes>`
-3. `POST /api/media/upload-sessions/<id>/complete`
-4. `GET /api/media/<id>/download`
+- `POST /api/media/upload-sessions`
+- `PUT /api/media/upload-sessions/<id>/chunk?offset=<bytes>`
+- `POST /api/media/upload-sessions/<id>/complete`
+- `GET /api/media/<id>/download`
 
-### WebSocket Events
+## Socket Events
 
-1. `send_message`
-2. `typing`
-3. `message_seen`
-4. `screenshot_detected`
-5. `message:new`
-6. `message:seen`
-7. `presence:update`
-8. `screenshot:alert`
+### Direct chat
 
-## 4. Authentication System
+- `send_message`
+- `typing`
+- `message_seen`
+- `message:new`
+- `message:seen`
+- `presence:update`
+- `screenshot_detected`
+- `screenshot:alert`
 
-Registration flow:
+### Groups
 
-1. User enters phone number, username, and password.
-2. The browser generates an RSA key pair.
-3. The private key is encrypted in the browser with a password-derived AES key.
-4. `register` stores the public key, encrypted private key, and binary password hash.
+- `group:subscribe`
+- `group:typing`
+- `send_group_message`
+- `group:message:new`
 
-Login flow:
+### Video calling
 
-1. User logs in with phone number and password.
-2. Flask stores the user session cookie.
-3. The frontend unlocks the encrypted private key locally to decrypt messages.
+- `call:offer`
+- `call:answer`
+- `call:ice-candidate`
+- `call:end`
 
-## 5. Chat System
+### Notifications
 
-1. Only accepted friends can exchange messages.
-2. Text payloads are encrypted in the browser before they are emitted over Socket.IO.
-3. Each text is encrypted separately for sender and recipient.
-4. Presence, typing, seen status, and screenshot alerts are pushed in realtime.
-5. Messages automatically expire after 24 hours.
+- `notification:new`
 
-## 6. Media Upload System
-
-1. Client starts an upload session with file metadata.
-2. Browser slices large image and video files into chunks.
-3. Each chunk is streamed to the backend and appended to a temporary file.
-4. The completed file is pushed to S3-compatible storage.
-5. Only the storage URL and key metadata are stored in PostgreSQL.
-6. Downloads are streamed through authenticated Flask endpoints.
-
-For production, configure AWS S3. If S3 variables are omitted, the app falls back to local storage for local development.
-
-## 7. Frontend UI
-
-The UI includes:
-
-1. Secret branding in the login page and chat page.
-2. Neon lock logo and favicon.
-3. Blue hacker theme with Orbitron and Share Tech Mono fonts.
-4. Responsive sidebar/chat/gallery layout.
-5. Stylish login/register flow with OTP stage.
-6. Modern bubbles for encrypted text, images, and videos.
-
-## 8. Scheduler System
-
-The APScheduler background worker runs inside the Flask process when `ENABLE_SCHEDULER=true`.
-
-It performs:
-
-1. Expired message cleanup.
-2. Expired media cleanup in storage.
-3. Stale upload cleanup for abandoned chunk uploads.
-
-## 9. Deployment Setup
-
-### Environment Variables
-
-Copy [.env.example](C:\D dirve\Projects\Chatting app\.env.example) to `.env` and fill in:
-
-1. `SECRET_KEY`
-2. `DATABASE_URL`
-3. AWS S3 credentials
-4. Cookie/security toggles
-
-### Local Run Instructions
+## Local Setup
 
 1. Install Python 3.11 and PostgreSQL.
 2. Create a PostgreSQL database named `secret`.
-3. Create and activate a virtual environment.
+3. Create a virtual environment.
 4. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-5. Copy env file:
+5. Copy the env file:
 
 ```bash
 cp .env.example .env
 ```
 
-6. Update `.env` with your PostgreSQL URL and optional S3 credentials.
+6. Fill in `.env`.
 7. Run the app:
 
 ```bash
@@ -190,33 +172,54 @@ python run.py
 
 8. Open `http://localhost:5000`.
 
-### Render Deployment Guide
+## Environment Variables
 
-1. Push this project to GitHub.
-2. Create a new PostgreSQL database in Render.
-3. Create a new Web Service from the repository.
-4. Use `render.yaml` or set these manually:
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `gunicorn --worker-class eventlet -w 1 run:app`
-5. Set env vars in Render:
-   - `DATABASE_URL`
-   - `SECRET_KEY`
-   - `SESSION_COOKIE_SECURE=true`
-   - `ENABLE_SCHEDULER=true`
-   - AWS S3 credentials
-6. Keep one web worker if the scheduler runs inside the web service.
+Required:
+
+- `SECRET_KEY`
+- `DATABASE_URL`
+
+Optional but recommended:
+
+- `SESSION_COOKIE_SECURE`
+- `ENABLE_SCHEDULER`
+- `MESSAGE_TTL_HOURS`
+- `MAX_CHUNK_SIZE`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_S3_BUCKET`
+- `AWS_S3_REGION`
+- `AWS_S3_ENDPOINT_URL`
+
+## Render Deployment
+
+This repo includes `render.yaml` with:
+
+- Python web service
+- `gunicorn --worker-class eventlet -w 1 run:app`
+- `/health` health check
+
+Typical Render setup:
+
+1. Connect the GitHub repo.
+2. Attach a PostgreSQL database.
+3. Set `DATABASE_URL`.
+4. Set a strong `SECRET_KEY`.
+5. Set `SESSION_COOKIE_SECURE=true`.
+6. Add S3 credentials if you want persistent media storage.
+7. Deploy.
 
 ## Security Notes
 
-1. Password hashes are stored as binary bytes in PostgreSQL.
-2. Text messages are end-to-end encrypted in the browser before transit and storage.
-3. Media downloads require an authenticated session.
-4. Friend-only messaging blocks unsolicited chat access.
-5. Screenshot detection is best-effort because browsers cannot guarantee OS-level screenshot capture detection.
+- Direct text messages are encrypted in the browser before storage and transport.
+- Password hashes are stored as binary bytes.
+- Media access is authenticated.
+- Screenshot detection is best-effort only because browsers cannot fully detect OS-level captures.
+- Group messages are server-protected, but they are not using the same per-recipient E2E scheme as direct text chat.
 
-## Known Production Follow-Ups
+## Production Follow-Ups
 
-1. Move from `db.create_all()` to Alembic migrations before a multi-stage rollout.
-2. Add chunk retry/resume tokens for interrupted very large uploads.
-3. Encrypt media client-side as well if you need E2E guarantees beyond text payloads.
-4. Add rate limiting and audit logging before public launch.
+- Move from `db.create_all()` to Alembic migrations
+- Add TURN servers for stronger video call reliability on restrictive networks
+- Add client-side media encryption if full E2E media protection is needed
+- Add rate limiting and abuse controls before public launch

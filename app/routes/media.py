@@ -6,7 +6,7 @@ from flask import Blueprint, Response, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import ChatMessage, MediaAsset, UploadSession
+from ..models import ChatMessage, GroupMembership, GroupMessage, MediaAsset, UploadSession
 from ..services.auth_helpers import get_current_user, login_required
 from ..services.storage_service import StorageError, get_storage
 
@@ -24,7 +24,15 @@ def _can_access_asset(user_id: int, asset_id: str) -> bool:
     message = ChatMessage.query.filter_by(media_id=asset_id).filter(
         (ChatMessage.sender_id == user_id) | (ChatMessage.recipient_id == user_id)
     ).first()
-    return bool(message)
+    if message:
+        return True
+    group_message = (
+        GroupMessage.query.filter_by(media_id=asset_id)
+        .join(GroupMembership, GroupMembership.group_id == GroupMessage.group_id)
+        .filter(GroupMembership.user_id == user_id)
+        .first()
+    )
+    return bool(group_message)
 
 
 @media_bp.post("/upload-sessions")
@@ -38,7 +46,7 @@ def create_upload_session():
     total_size = int(data.get("total_size") or 0)
     chunk_size = int(data.get("chunk_size") or current_app.config["MAX_CHUNK_SIZE"])
 
-    if not filename or not content_type or media_type not in {"image", "video"}:
+    if not filename or not content_type or media_type not in {"image", "video", "audio"}:
         return jsonify({"error": "Invalid media metadata."}), 400
     if total_size <= 0:
         return jsonify({"error": "Total file size must be greater than zero."}), 400
@@ -114,9 +122,7 @@ def complete_upload(upload_id: str):
     tmp_path = Path(upload.tmp_path)
     storage = get_storage()
     try:
-        stored = storage.save_uploaded_file(
-            tmp_path, upload.original_filename, upload.content_type
-        )
+        stored = storage.save_uploaded_file(tmp_path, upload.original_filename, upload.content_type)
     except StorageError as exc:
         return jsonify({"error": str(exc)}), 502
 

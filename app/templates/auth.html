@@ -1,37 +1,46 @@
 {% extends "base.html" %}
 {% block title %}Secret | Private Login{% endblock %}
 {% block body %}
-<main class="auth-shell">
-    <section class="auth-hero">
-        <div class="brand-lock">
+<main class="auth-shell classic-auth-shell">
+    <section class="auth-hero classic-auth-hero">
+        <div class="brand-lock classic-brand-lock">
             <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Secret logo">
         </div>
-        <p class="eyebrow">Privacy-first realtime messaging</p>
+        <p class="eyebrow">Private Messenger</p>
         <h1>Secret</h1>
         <p class="hero-copy">
-            A disappearing message platform with end-to-end encrypted chats, realtime presence,
-            screenshot alerts, and secure media sharing.
+            A classic private messenger for direct chat, group chat, voice notes, media sharing,
+            and live video conversation.
         </p>
-        <div class="hero-grid">
+        <div class="hero-grid classic-hero-grid">
             <article>
-                <span>24H</span>
-                <p>Auto-delete for messages and media</p>
+                <span>CHAT</span>
+                <p>Direct and group messaging in one place</p>
             </article>
             <article>
-                <span>E2E</span>
-                <p>Client-side encrypted text payloads</p>
+                <span>CALL</span>
+                <p>WebRTC video calling with live signaling</p>
             </article>
             <article>
-                <span>LIVE</span>
-                <p>Socket-powered typing and seen status</p>
+                <span>VOICE</span>
+                <p>Quick voice notes with classic inbox flow</p>
             </article>
         </div>
     </section>
 
-    <section class="auth-panel">
-        <header class="panel-header">
-            <h2>Enter Secret</h2>
-            <p>Sign in with your phone number or create a private account.</p>
+    <section class="auth-panel classic-auth-panel">
+        <header class="panel-header auth-header-row">
+            <div>
+                <h2>Enter Secret</h2>
+                <p>Sign in with your phone number or create a private account.</p>
+            </div>
+            <a
+                class="info-button"
+                href="https://shahriyas-portfolio.netlify.app"
+                target="_blank"
+                rel="noreferrer"
+                title="Portfolio"
+            >i</a>
         </header>
 
         <div class="tab-switcher">
@@ -50,7 +59,7 @@
                 <span>Password</span>
                 <input name="password" type="password" placeholder="Your password" required>
             </label>
-            <button type="submit" class="glow-button">Login to Secret</button>
+            <button type="submit" class="primary-button">Login</button>
         </form>
 
         <form id="register-form" class="auth-form">
@@ -60,13 +69,13 @@
             </label>
             <label>
                 <span>Username</span>
-                <input name="username" type="text" placeholder="alias_404" required>
+                <input name="username" type="text" placeholder="classic_user" required>
             </label>
             <label>
                 <span>Password</span>
                 <input name="password" type="password" placeholder="Create a strong password" required>
             </label>
-            <button type="submit" class="glow-button" id="register-submit">Create Account</button>
+            <button type="submit" class="primary-button" id="register-submit">Create Account</button>
             <p class="microcopy">Phone numbers are unique. One number can only create one Secret account.</p>
         </form>
     </section>

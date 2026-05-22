@@ -1,93 +1,109 @@
 {% extends "base.html" %}
-{% block title %}Secret | Encrypted Chat{% endblock %}
+{% block title %}Secret | Classic Messenger{% endblock %}
 {% block head %}
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
 {% endblock %}
 {% block body %}
-<div class="app-shell">
-    <aside class="sidebar">
-        <div class="sidebar-brand">
+<div class="classic-app-shell">
+    <aside class="classic-sidebar">
+        <div class="classic-brand-row">
             <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Secret logo">
             <div>
-                <p class="eyebrow">Realtime secure chat</p>
+                <p class="eyebrow">Classic private messenger</p>
                 <h1>Secret</h1>
             </div>
         </div>
 
-        <section class="card">
-            <div class="section-title">
-                <h2>Network</h2>
-                <button id="logout-button" class="ghost-button">Logout</button>
+        <section class="classic-card control-card">
+            <div class="toolbar-row">
+                <button id="notification-button" class="secondary-button">Notifications <span id="notification-count" class="classic-badge">0</span></button>
+                <button id="logout-button" class="secondary-button">Logout</button>
             </div>
-            <form id="friend-form" class="inline-form">
+            <div class="toolbar-row top-gap">
+                <button id="mark-all-read" class="link-button">Mark all read</button>
+            </div>
+            <div id="notification-list" class="notification-list empty-copy">No notifications yet.</div>
+        </section>
+
+        <section class="classic-card">
+            <div class="section-title"><h2>Friend Requests</h2><span id="request-count" class="classic-badge">0</span></div>
+            <div id="incoming-requests" class="request-list empty-copy">No incoming requests.</div>
+        </section>
+
+        <section class="classic-card">
+            <div class="section-title"><h2>User Directory</h2><span id="directory-count" class="classic-badge">0</span></div>
+            <form id="friend-form" class="inline-form classic-inline-form">
                 <input id="friend-phone" type="tel" placeholder="Add friend by phone number" required>
-                <button type="submit" class="glow-button compact">Add</button>
+                <button type="submit" class="primary-button compact-button">Add</button>
             </form>
+            <div id="directory-list" class="directory-list empty-copy">No users available yet.</div>
         </section>
 
-        <section class="card requests-card">
-            <div class="section-title">
-                <h2>Requests</h2>
-                <span id="request-count" class="pill">0</span>
-            </div>
-            <div id="incoming-requests" class="request-list empty-state-text">No incoming requests.</div>
+        <section class="classic-card">
+            <div class="section-title"><h2>Direct Chats</h2><span id="friend-count" class="classic-badge">0</span></div>
+            <div id="conversation-list" class="conversation-list empty-copy">Add a friend to start chatting.</div>
         </section>
 
-        <section class="card friends-card">
-            <div class="section-title">
-                <h2>Friends</h2>
-                <span id="friend-count" class="pill">0</span>
-            </div>
-            <div id="conversation-list" class="conversation-list empty-state-text">
-                Add a friend to start chatting.
-            </div>
+        <section class="classic-card">
+            <div class="section-title"><h2>Groups</h2><span id="group-count" class="classic-badge">0</span></div>
+            <form id="group-form" class="group-form">
+                <input id="group-name" type="text" placeholder="Group name" required>
+                <div id="group-member-picker" class="member-picker empty-copy">Choose users from directory.</div>
+                <button type="submit" class="primary-button">Create Group</button>
+            </form>
+            <div id="group-list" class="group-list empty-copy">No groups yet.</div>
         </section>
     </aside>
 
-    <main class="chat-stage">
-        <header class="chat-header">
+    <main class="classic-chat-stage">
+        <header class="classic-chat-header classic-card">
             <div>
-                <p class="eyebrow">Secure line</p>
-                <h2 id="active-friend-name">Choose a friend</h2>
-                <p id="active-friend-status" class="status-text">Only accepted friends can chat.</p>
+                <p class="eyebrow" id="active-chat-type">Direct Chat</p>
+                <h2 id="active-chat-name">Choose a chat</h2>
+                <p id="active-chat-status" class="status-text">Select a person or group to begin messaging.</p>
             </div>
-            <button id="refresh-gallery" class="ghost-button">Refresh Gallery</button>
+            <div class="call-actions">
+                <button id="video-call-button" class="secondary-button">Video Chat</button>
+                <button id="end-call-button" class="secondary-button hidden">End Call</button>
+            </div>
         </header>
 
-        <section id="message-stream" class="message-stream">
+        <section id="message-stream" class="classic-message-stream classic-card">
             <div class="empty-state">
-                <h3>Private conversations start here</h3>
-                <p>Pick a friend from the left, then send encrypted text, images, or video.</p>
+                <h3>Welcome to Secret</h3>
+                <p>Choose a direct chat or group, then send text, media, or a voice message.</p>
             </div>
         </section>
 
-        <div class="typing-row">
-            <span id="typing-indicator"></span>
-        </div>
+        <div class="typing-row"><span id="typing-indicator"></span></div>
 
-        <footer class="composer card">
-            <div class="composer-row">
-                <textarea id="message-input" rows="2" placeholder="Write an encrypted message or use this as a media caption"></textarea>
-                <div class="composer-actions">
-                    <label class="upload-label">
-                        <input id="media-input" type="file" accept="image/*,video/*">
-                        <span>Attach</span>
-                    </label>
-                    <button id="send-button" class="glow-button">Send</button>
-                </div>
+        <footer class="classic-composer classic-card">
+            <textarea id="message-input" rows="3" placeholder="Type a message..."></textarea>
+            <div class="composer-toolbar">
+                <label class="upload-label classic-upload-label">
+                    <input id="media-input" type="file" accept="image/*,video/*,audio/*">
+                    <span>Attach File</span>
+                </label>
+                <button id="record-voice-button" class="secondary-button">Record Voice</button>
+                <button id="send-button" class="primary-button">Send</button>
             </div>
+            <div id="recording-status" class="progress-text"></div>
             <div id="upload-progress" class="progress-text"></div>
         </footer>
     </main>
 
-    <aside class="gallery-panel">
-        <div class="section-title">
-            <h2>Media Gallery</h2>
-            <span class="pill">24h</span>
-        </div>
-        <div id="gallery-grid" class="gallery-grid empty-state-text">
-            Media you share in Secret appears here until it expires.
-        </div>
+    <aside class="classic-side-panel">
+        <section class="classic-card media-card">
+            <div class="section-title"><h2>Media</h2><button id="refresh-gallery" class="link-button">Refresh</button></div>
+            <div id="gallery-grid" class="gallery-grid empty-copy">Media from the active chat will appear here.</div>
+        </section>
+        <section class="classic-card call-card hidden" id="call-panel">
+            <div class="section-title"><h2>Video Call</h2><span id="call-status" class="classic-badge">Idle</span></div>
+            <div class="video-grid">
+                <video id="local-video" autoplay muted playsinline></video>
+                <video id="remote-video" autoplay playsinline></video>
+            </div>
+        </section>
     </aside>
 </div>
 

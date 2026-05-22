@@ -23,6 +23,36 @@ CREATE TABLE friendships (
     CONSTRAINT uq_friendship_direction UNIQUE (requester_id, addressee_id)
 );
 
+CREATE TABLE app_notifications (
+    id VARCHAR(36) PRIMARY KEY,
+    recipient_id INTEGER NOT NULL REFERENCES users(id),
+    actor_id INTEGER REFERENCES users(id),
+    kind VARCHAR(32) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    resource_type VARCHAR(32),
+    resource_id VARCHAR(64),
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE groups (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE group_memberships (
+    id SERIAL PRIMARY KEY,
+    group_id VARCHAR(36) NOT NULL REFERENCES groups(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    role VARCHAR(16) NOT NULL DEFAULT 'member',
+    joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_group_membership UNIQUE (group_id, user_id)
+);
+
 CREATE TABLE upload_sessions (
     id VARCHAR(36) PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
@@ -63,6 +93,17 @@ CREATE TABLE chat_messages (
     media_id VARCHAR(36) REFERENCES media_assets(id),
     is_seen BOOLEAN NOT NULL DEFAULT FALSE,
     seen_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE group_messages (
+    id VARCHAR(36) PRIMARY KEY,
+    group_id VARCHAR(36) NOT NULL REFERENCES groups(id),
+    sender_id INTEGER NOT NULL REFERENCES users(id),
+    kind VARCHAR(16) NOT NULL DEFAULT 'text',
+    payload TEXT,
+    media_id VARCHAR(36) REFERENCES media_assets(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL
 );
