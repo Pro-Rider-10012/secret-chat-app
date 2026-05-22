@@ -7,6 +7,9 @@ const forms = {
     register: document.getElementById("register-form"),
 };
 const alertBox = document.getElementById("auth-alert");
+const developerInfoButton = document.getElementById("developer-info-button");
+const developerModal = document.getElementById("developer-modal");
+const developerModalClose = document.getElementById("developer-modal-close");
 
 function showAlert(message, type = "error") {
     alertBox.textContent = message;
@@ -23,8 +26,32 @@ function switchTab(tabName) {
     alertBox.className = "alert hidden";
 }
 
+function openDeveloperModal() {
+    developerModal.classList.remove("hidden");
+    developerModal.setAttribute("aria-hidden", "false");
+}
+
+function closeDeveloperModal() {
+    developerModal.classList.add("hidden");
+    developerModal.setAttribute("aria-hidden", "true");
+}
+
 tabButtons.forEach((button) => {
     button.addEventListener("click", () => switchTab(button.dataset.tab));
+});
+
+developerInfoButton?.addEventListener("click", openDeveloperModal);
+developerModalClose?.addEventListener("click", closeDeveloperModal);
+developerModal?.addEventListener("click", (event) => {
+    if (event.target === developerModal) {
+        closeDeveloperModal();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && developerModal && !developerModal.classList.contains("hidden")) {
+        closeDeveloperModal();
+    }
 });
 
 forms.login.addEventListener("submit", async (event) => {

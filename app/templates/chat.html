@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Secret | Classic Messenger{% endblock %}
+{% block title %}Secret | Private Messenger{% endblock %}
 {% block head %}
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
 {% endblock %}
@@ -9,7 +9,7 @@
         <div class="classic-brand-row">
             <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Secret logo">
             <div>
-                <p class="eyebrow">Classic private messenger</p>
+                <p class="eyebrow">Realtime private network</p>
                 <h1>Secret</h1>
             </div>
         </div>
@@ -22,7 +22,7 @@
             <div class="toolbar-row top-gap">
                 <button id="mark-all-read" class="link-button">Mark all read</button>
             </div>
-            <div id="notification-list" class="notification-list empty-copy">No notifications yet.</div>
+            <div id="notification-list" class="notification-list empty-copy hidden">No notifications yet.</div>
         </section>
 
         <section class="classic-card">
@@ -32,6 +32,7 @@
 
         <section class="classic-card">
             <div class="section-title"><h2>User Directory</h2><span id="directory-count" class="classic-badge">0</span></div>
+            <p class="section-subcopy">See everyone on Secret and send a friend request instantly.</p>
             <form id="friend-form" class="inline-form classic-inline-form">
                 <input id="friend-phone" type="tel" placeholder="Add friend by phone number" required>
                 <button type="submit" class="primary-button compact-button">Add</button>
@@ -58,9 +59,9 @@
     <main class="classic-chat-stage">
         <header class="classic-chat-header classic-card">
             <div>
-                <p class="eyebrow" id="active-chat-type">Direct Chat</p>
+                <p class="eyebrow" id="active-chat-type">Private Chat</p>
                 <h2 id="active-chat-name">Choose a chat</h2>
-                <p id="active-chat-status" class="status-text">Select a person or group to begin messaging.</p>
+                <p id="active-chat-status" class="status-text">Select a direct chat or group to begin messaging.</p>
             </div>
             <div class="call-actions">
                 <button id="video-call-button" class="secondary-button">Video Chat</button>
@@ -70,8 +71,8 @@
 
         <section id="message-stream" class="classic-message-stream classic-card">
             <div class="empty-state">
-                <h3>Welcome to Secret</h3>
-                <p>Choose a direct chat or group, then send text, media, or a voice message.</p>
+                <h3>Welcome back to Secret</h3>
+                <p>Choose a direct chat or group, then send text, media, voice notes, or start a video call.</p>
             </div>
         </section>
 

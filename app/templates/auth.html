@@ -6,24 +6,24 @@
         <div class="brand-lock classic-brand-lock">
             <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Secret logo">
         </div>
-        <p class="eyebrow">Private Messenger</p>
+        <p class="eyebrow">Secure realtime messenger</p>
         <h1>Secret</h1>
         <p class="hero-copy">
-            A classic private messenger for direct chat, group chat, voice notes, media sharing,
-            and live video conversation.
+            Dark private messaging with realtime chat, voice notes, group rooms,
+            disappearing content, and live video conversation.
         </p>
         <div class="hero-grid classic-hero-grid">
             <article>
-                <span>CHAT</span>
-                <p>Direct and group messaging in one place</p>
+                <span>PRIVATE CHAT</span>
+                <p>Fast direct messaging with encrypted text flow</p>
             </article>
             <article>
-                <span>CALL</span>
-                <p>WebRTC video calling with live signaling</p>
+                <span>GROUPS</span>
+                <p>Create rooms, share updates, and keep everyone synced</p>
             </article>
             <article>
-                <span>VOICE</span>
-                <p>Quick voice notes with classic inbox flow</p>
+                <span>VOICE + VIDEO</span>
+                <p>Send voice notes or jump into browser video chat</p>
             </article>
         </div>
     </section>
@@ -34,13 +34,7 @@
                 <h2>Enter Secret</h2>
                 <p>Sign in with your phone number or create a private account.</p>
             </div>
-            <a
-                class="info-button"
-                href="https://shahriyas-portfolio.netlify.app"
-                target="_blank"
-                rel="noreferrer"
-                title="Portfolio"
-            >i</a>
+            <button class="info-button" id="developer-info-button" type="button" title="Developer info">i</button>
         </header>
 
         <div class="tab-switcher">
@@ -69,7 +63,7 @@
             </label>
             <label>
                 <span>Username</span>
-                <input name="username" type="text" placeholder="classic_user" required>
+                <input name="username" type="text" placeholder="shadow_user" required>
             </label>
             <label>
                 <span>Password</span>
@@ -80,5 +74,23 @@
         </form>
     </section>
 </main>
+
+<div id="developer-modal" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="developer-modal-title">
+        <p class="eyebrow">Developer Info</p>
+        <h3 id="developer-modal-title">Want to know about the developer of this app?</h3>
+        <p class="modal-copy">If you want know about developer of this app, click here.</p>
+        <div class="modal-actions">
+            <button type="button" id="developer-modal-close" class="modal-close-button">Close</button>
+            <a
+                class="modal-link-button"
+                href="https://shahriyas-portfolio.netlify.app"
+                target="_blank"
+                rel="noreferrer"
+            >Open Portfolio</a>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}
