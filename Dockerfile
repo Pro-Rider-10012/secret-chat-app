@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0.0.0.0:8080", "run:app"]
+CMD gunicorn --worker-class eventlet -w 1 -b 0.0.0.0:${PORT:-8080} run:app

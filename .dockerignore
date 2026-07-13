@@ -6,6 +6,3 @@ instance/
 .git/
 .gitignore
 README.md
-render.yaml
-Procfile
-runtime.txt
