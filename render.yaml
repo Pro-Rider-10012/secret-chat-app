@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: secret-chat-app
+    env: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENABLE_SCHEDULER
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.11"
