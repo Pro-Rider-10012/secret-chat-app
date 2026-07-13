@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+instance/
+.pytest_cache/
+.git/
+.gitignore
+README.md
+render.yaml
+Procfile
+runtime.txt
