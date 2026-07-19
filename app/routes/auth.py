@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request, session
@@ -6,12 +7,19 @@ from ..extensions import db
 from ..models import User
 from ..services.auth_helpers import get_current_user, login_required
 
+_BD_PHONE_RE = re.compile(r"^\+8801[3-9]\d{8}$")
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
 def _json() -> dict:
     return request.get_json(silent=True) or {}
+
+
+def _validate_bd_phone(phone: str) -> str | None:
+    if not _BD_PHONE_RE.match(phone):
+        return "Invalid Bangladesh number. Use +8801XXXXXXXXX format (11 digits after +880)."
+    return None
 
 
 @auth_bp.post("/register")
@@ -30,6 +38,10 @@ def register():
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
 
     phone_number = data["phone_number"].strip()
+    phone_error = _validate_bd_phone(phone_number)
+    if phone_error:
+        return jsonify({"error": phone_error}), 400
+
     username = data["username"].strip()
     if User.query.filter_by(phone_number=phone_number).first():
         return jsonify({"error": "Phone number already exists."}), 409
@@ -56,6 +68,9 @@ def register():
 def login():
     data = _json()
     phone_number = (data.get("phone_number") or "").strip()
+    phone_error = _validate_bd_phone(phone_number)
+    if phone_error:
+        return jsonify({"error": phone_error}), 400
     password = data.get("password") or ""
     user = User.query.filter_by(phone_number=phone_number).first()
     if not user or not user.check_password(password):

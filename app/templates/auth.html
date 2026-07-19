@@ -47,7 +47,7 @@
         <form id="login-form" class="auth-form active">
             <label>
                 <span>Phone Number</span>
-                <input name="phone_number" type="tel" placeholder="+8801XXXXXXXXX" required>
+                <input name="phone_number" type="tel" placeholder="+8801XXXXXXXXX" pattern="\+8801[3-9]\d{8}" maxlength="15" required>
             </label>
             <label>
                 <span>Password</span>
@@ -59,7 +59,7 @@
         <form id="register-form" class="auth-form">
             <label>
                 <span>Phone Number</span>
-                <input name="phone_number" type="tel" placeholder="+8801XXXXXXXXX" required>
+                <input name="phone_number" type="tel" placeholder="+8801XXXXXXXXX" pattern="\+8801[3-9]\d{8}" maxlength="15" required>
             </label>
             <label>
                 <span>Username</span>

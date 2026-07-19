@@ -1,6 +1,12 @@
 import { post } from "./api.js";
 import { generateIdentity } from "./crypto.js";
 
+const BD_PHONE_RE = /^\+8801[3-9]\d{8}$/;
+
+function validateBdPhone(phone) {
+    return BD_PHONE_RE.test(phone);
+}
+
 const tabButtons = [...document.querySelectorAll(".tab-button")];
 const forms = {
     login: document.getElementById("login-form"),
@@ -60,6 +66,11 @@ forms.login.addEventListener("submit", async (event) => {
     const phoneNumber = formData.get("phone_number");
     const password = formData.get("password");
 
+    if (!validateBdPhone(phoneNumber)) {
+        showAlert("Invalid Bangladesh number. Use +8801XXXXXXXXX format.");
+        return;
+    }
+
     try {
         const payload = await post("/api/auth/login", {
             phone_number: phoneNumber,
@@ -78,6 +89,11 @@ forms.register.addEventListener("submit", async (event) => {
     const phoneNumber = formData.get("phone_number");
     const username = formData.get("username");
     const password = formData.get("password");
+
+    if (!validateBdPhone(phoneNumber)) {
+        showAlert("Invalid Bangladesh number. Use +8801XXXXXXXXX format.");
+        return;
+    }
 
     try {
         const identity = await generateIdentity(password);
